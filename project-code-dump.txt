@@ -1,0 +1,380 @@
+
+
+--- src/App.tsx ---
+
+import React, { useState } from 'react';
+import { MessageCircle, Send, Loader2 } from 'lucide-react';
+import OpenAI from 'openai';
+import ReactMarkdown from 'react-markdown';
+
+const openai = new OpenAI({
+  baseURL: 'https://api.deepseek.com',
+  apiKey: import.meta.env.VITE_DEEPSEEK_API_KEY,
+  dangerouslyAllowBrowser: true,
+});
+
+function App() {
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    setMessages([...messages, { role: 'user', content: input }]);
+    setInput('');
+    setIsLoading(true);
+
+    try {
+      const completion = await openai.chat.completions.create({
+        messages: [
+          { role: "system", content: "You are a helpful assistant for children. Provide simple, fun, and educational answers. Use Markdown formatting to make your responses more engaging." },
+          ...messages,
+          { role: "user", content: input }
+        ],
+        model: "deepseek-chat",
+      });
+
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { role: 'assistant', content: completion.choices[0].message.content || 'Sorry, I couldn\'t generate a response.' }
+      ]);
+    } catch (error) {
+      console.error('Error:', error);
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { role: 'assistant', content: 'Oops! Something went wrong. Please try again.' }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 flex flex-col">
+      <header className="bg-white shadow-md p-4">
+        <h1 className="text-3xl font-bold text-center text-purple-600">KidsChat with DeepSeek</h1>
+      </header>
+      <main className="flex-grow container mx-auto p-4 flex flex-col">
+        <div className="flex-grow bg-white rounded-lg shadow-xl p-4 mb-4 overflow-y-auto">
+          {messages.map((message, index) => (
+            <div key={index} className={`mb-4 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+              <div className={`inline-block p-3 rounded-lg ${message.role === 'user' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'}`}>
+                {message.role === 'user' ? (
+                  message.content
+                ) : (
+                  <ReactMarkdown className="markdown-content">{message.content}</ReactMarkdown>
+                )}
+              </div>
+            </div>
+          ))}
+          {isLoading && (
+            <div className="text-center">
+              <Loader2 className="animate-spin h-8 w-8 text-purple-500 mx-auto" />
+              <p className="text-purple-500 mt-2">Thinking...</p>
+            </div>
+          )}
+        </div>
+        <form onSubmit={handleSubmit} className="flex items-center">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Ask me anything!"
+            className="flex-grow p-3 rounded-l-lg border-2 border-purple-300 focus:outline-none focus:border-purple-500"
+          />
+          <button type="submit" className="bg-purple-500 text-white p-3 rounded-r-lg hover:bg-purple-600 transition duration-300">
+            <Send size={24} />
+          </button>
+        </form>
+      </main>
+      <footer className="bg-white shadow-md p-4 text-center text-purple-600">
+        <p>Made with ❤️ for curious kids!</p>
+      </footer>
+    </div>
+  );
+}
+
+export default App;
+
+--- src/main.tsx ---
+
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import App from './App.tsx'
+import './index.css'
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>,
+)
+
+
+--- src/index.css ---
+
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+body {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.markdown-content {
+  @apply text-left;
+}
+
+.markdown-content h1 {
+  @apply text-2xl font-bold mb-2;
+}
+
+.markdown-content h2 {
+  @apply text-xl font-bold mb-2;
+}
+
+.markdown-content h3 {
+  @apply text-lg font-bold mb-2;
+}
+
+.markdown-content p {
+  @apply mb-2;
+}
+
+.markdown-content ul, .markdown-content ol {
+  @apply list-disc list-inside mb-2;
+}
+
+.markdown-content li {
+  @apply ml-4;
+}
+
+.markdown-content code {
+  @apply bg-gray-100 rounded px-1;
+}
+
+.markdown-content pre {
+  @apply bg-gray-100 rounded p-2 mb-2 overflow-x-auto;
+}
+
+.markdown-content blockquote {
+  @apply border-l-4 border-gray-300 pl-4 italic;
+}
+
+.markdown-content a {
+  @apply text-blue-500 underline;
+}
+
+--- src/vite-env.d.ts ---
+
+/// <reference types="vite/client" />
+
+
+--- index.html ---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+
+--- package.json ---
+
+{
+  "name": "deepseek-kids-chat",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "package": "node create-tarball.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "lucide-react": "^0.344.0",
+    "openai": "^4.28.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-markdown": "^9.0.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.18",
+    "eslint": "^9.9.1",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.11",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.3.0",
+    "vite": "^5.4.2",
+    "tar": "^6.2.0"
+  }
+}
+
+--- tsconfig.json ---
+
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+
+
+--- tsconfig.app.json ---
+
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}
+
+
+--- tsconfig.node.json ---
+
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+
+--- vite.config.ts ---
+
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [react()],
+})
+
+
+--- tailwind.config.js ---
+
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: [
+    "./index.html",
+    "./src/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+}
+
+--- postcss.config.js ---
+
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}
+
+--- eslint.config.js ---
+
+import js from '@eslint/js'
+import globals from 'globals'
+import reactHooks from 'eslint-plugin-react-hooks'
+import reactRefresh from 'eslint-plugin-react-refresh'
+import tseslint from 'typescript-eslint'
+
+export default tseslint.config(
+  { ignores: ['dist'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  },
+)
+
+
+--- .env ---
+
+VITE_DEEPSEEK_API_KEY=sk-209e33530be946dc8c1833f458a7ce25

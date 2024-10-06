@@ -1,0 +1,66 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+body {
+  font-family: 'Comic Sans MS', cursive, sans-serif;
+}
+
+.animate-bounce {
+  animation: bounce 1s infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+.markdown-content {
+  @apply text-left;
+}
+
+.markdown-content h1 {
+  @apply text-2xl font-bold mb-2;
+}
+
+.markdown-content h2 {
+  @apply text-xl font-bold mb-2;
+}
+
+.markdown-content h3 {
+  @apply text-lg font-bold mb-2;
+}
+
+.markdown-content p {
+  @apply mb-2;
+}
+
+.markdown-content ul, .markdown-content ol {
+  @apply list-disc list-inside mb-2;
+}
+
+.markdown-content li {
+  @apply ml-4;
+}
+
+.markdown-content code {
+  @apply bg-gray-100 rounded px-1;
+}
+
+.markdown-content pre {
+  @apply bg-gray-100 rounded p-2 mb-2 overflow-x-auto;
+}
+
+.markdown-content blockquote {
+  @apply border-l-4 border-gray-300 pl-4 italic;
+}
+
+.markdown-content a {
+  @apply text-blue-500 underline;
+}
